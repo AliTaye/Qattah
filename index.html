@@ -1,0 +1,486 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>تتبع المصاريف</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&display=swap');
+        body {
+            font-family: 'Tajawal', sans-serif;
+            background-color: #f3f4f6;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen p-4 md:p-8">
+
+    <div class="max-w-4xl mx-auto space-y-6">
+        
+        <!-- Header -->
+        <header class="text-center pb-6 border-b border-gray-200">
+            <h1 class="text-3xl md:text-4xl font-bold text-indigo-600 mb-2">
+                <i class="fas fa-wallet ml-2"></i> حساب القطة بسهولة
+            </h1>
+            <p class="text-gray-500">تتبع المصاريف واعرف مين يطلب مين!</p>
+        </header>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            
+            <!-- قسم إضافة الأشخاص -->
+            <div class="bg-white rounded-2xl shadow-sm p-6 border border-gray-100">
+                <h2 class="text-xl font-bold text-gray-800 mb-4 flex items-center">
+                    <i class="fas fa-users text-indigo-500 ml-2"></i> الأشخاص
+                </h2>
+                <div class="flex space-x-2 space-x-reverse mb-4">
+                    <input type="text" id="personName" placeholder="اسم الصديق (مثال: أحمد)" 
+                           class="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500">
+                    <button onclick="addPerson()" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg transition duration-200">
+                        إضافة
+                    </button>
+                </div>
+                
+                <div id="peopleList" class="flex flex-wrap gap-2">
+                    <!-- سيتم إضافة الأشخاص هنا -->
+                    <p class="text-gray-400 text-sm w-full text-center py-2" id="noPeopleMsg">لم يتم إضافة أشخاص بعد</p>
+                </div>
+            </div>
+
+            <!-- قسم إضافة المصروف -->
+            <div class="bg-white rounded-2xl shadow-sm p-6 border border-gray-100">
+                <h2 class="text-xl font-bold text-gray-800 mb-4 flex items-center">
+                    <i class="fas fa-receipt text-green-500 ml-2"></i> إضافة مصروف
+                </h2>
+                <div class="space-y-3">
+                    <input type="text" id="expenseTitle" placeholder="وصف المصروف (مثال: عشاء، بنزين)" 
+                           class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-green-500 focus:ring-1 focus:ring-green-500">
+                    
+                    <div class="flex space-x-2 space-x-reverse">
+                        <input type="number" id="expenseAmount" placeholder="المبلغ (مثلاً: 400)" min="0" step="0.01"
+                               class="w-1/2 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-green-500 focus:ring-1 focus:ring-green-500">
+                        
+                        <select id="expensePayer" class="w-1/2 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-green-500 focus:ring-1 focus:ring-green-500 bg-white">
+                            <option value="" disabled selected>من دفع؟</option>
+                            <!-- سيتم تعبئة الأسماء هنا -->
+                        </select>
+                    </div>
+
+                    <!-- قسم اختيار المشاركين في المصروف -->
+                    <div class="mt-4 bg-gray-50 p-3 rounded-lg border border-gray-200">
+                        <label class="block text-sm font-bold text-gray-700 mb-2">المشاركون في هذا المصروف:</label>
+                        <div id="expenseInvolved" class="flex flex-wrap gap-2">
+                            <p class="text-xs text-gray-400">أضف أشخاصاً أولاً للتمكن من التحديد</p>
+                        </div>
+                    </div>
+                    
+                    <button onclick="addExpense()" class="w-full bg-green-500 hover:bg-green-600 text-white font-bold py-2 rounded-lg transition duration-200 mt-2">
+                        تسجيل المصروف
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- قائمة المصاريف والحسابات -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            
+            <!-- سجل المصاريف -->
+            <div class="bg-white rounded-2xl shadow-sm p-6 border border-gray-100">
+                <h2 class="text-xl font-bold text-gray-800 mb-4 flex items-center justify-between">
+                    <span><i class="fas fa-list-alt text-blue-500 ml-2"></i> سجل المصاريف</span>
+                    <span id="totalExpenses" class="text-sm bg-blue-100 text-blue-800 py-1 px-3 rounded-full font-bold">الإجمالي: 0</span>
+                </h2>
+                <div class="overflow-y-auto max-h-64 space-y-2 pr-2" id="expensesList">
+                    <!-- المصاريف ستظهر هنا -->
+                    <p class="text-gray-400 text-sm text-center py-4" id="noExpensesMsg">لا توجد مصاريف مسجلة</p>
+                </div>
+            </div>
+
+            <!-- التسويات (مين يطلب مين) -->
+            <div class="bg-gradient-to-br from-indigo-50 to-purple-50 rounded-2xl shadow-sm p-6 border border-indigo-100">
+                <h2 class="text-xl font-bold text-indigo-900 mb-4 flex items-center">
+                    <i class="fas fa-handshake text-indigo-600 ml-2"></i> تصفية الحسابات
+                </h2>
+                <p id="averageMsg" class="text-sm text-indigo-700 mb-4 hidden">متوسط نصيب الفرد: <span id="avgAmount" class="font-bold">0</span></p>
+                
+                <div id="settlementsList" class="space-y-3">
+                    <!-- التسويات ستظهر هنا -->
+                    <p class="text-gray-500 text-sm text-center py-4" id="noSettlementsMsg">أضف الأشخاص والمصاريف لرؤية طريقة تصفية الحسابات.</p>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- JavaScript Logic -->
+    <script>
+        let people = [];
+        let expenses = [];
+
+        // 1. إضافة شخص
+        function addPerson() {
+            const nameInput = document.getElementById('personName');
+            const name = nameInput.value.trim();
+
+            if (!name) {
+                showMessage("الرجاء إدخال اسم الصديق");
+                return;
+            }
+
+            if (people.includes(name)) {
+                showMessage("هذا الاسم موجود مسبقاً، الرجاء استخدام اسم مختلف.");
+                return;
+            }
+
+            people.push(name);
+            nameInput.value = '';
+            
+            updateUI();
+            showMessage("تم إضافة الصديق بنجاح", "success");
+        }
+
+        // حذف شخص
+        function removePerson(name) {
+            // التأكد من أن الشخص ليس لديه مصاريف مسجلة باسمه أو مشارك فيها
+            const hasPaid = expenses.some(e => e.payer === name);
+            const isInvolved = expenses.some(e => e.involved && e.involved.includes(name));
+            
+            if (hasPaid || isInvolved) {
+                showMessage("لا يمكن حذف هذا الشخص لأنه قام بدفع مصاريف أو مشارك فيها. يرجى حذفها أولاً.");
+                return;
+            }
+            people = people.filter(p => p !== name);
+            updateUI();
+        }
+
+        // 2. إضافة مصروف
+        function addExpense() {
+            let title = document.getElementById('expenseTitle').value.trim();
+            const amountInput = document.getElementById('expenseAmount').value;
+            const payer = document.getElementById('expensePayer').value;
+
+            // جمع الأشخاص المشاركين في هذا المصروف
+            const involvedCheckboxes = document.querySelectorAll('#expenseInvolved input[type="checkbox"]:checked');
+            const involved = Array.from(involvedCheckboxes).map(cb => cb.value);
+
+            // تحويل الأرقام العربية إلى إنجليزية لتفادي أخطاء القراءة
+            const englishAmountStr = amountInput.replace(/[٠-٩]/g, d => "٠١٢٣٤٥٦٧٨٩".indexOf(d));
+            const amount = parseFloat(englishAmountStr);
+
+            if (people.length === 0) {
+                showMessage("الرجاء إضافة الأشخاص أولاً!");
+                return;
+            }
+
+            if (isNaN(amount) || amount <= 0) {
+                showMessage("الرجاء إدخال مبلغ صحيح أكبر من الصفر");
+                return;
+            }
+
+            if (!payer) {
+                showMessage("الرجاء اختيار الشخص الذي قام بالدفع");
+                return;
+            }
+
+            if (involved.length === 0) {
+                showMessage("الرجاء اختيار شخص واحد على الأقل مشارك في هذا المصروف");
+                return;
+            }
+
+            // جعل الوصف اختيارياً
+            if (!title) {
+                title = "مصروف عام";
+            }
+
+            expenses.push({
+                id: Date.now(),
+                title: title,
+                amount: amount,
+                payer: payer,
+                involved: involved // إضافة المشاركين
+            });
+
+            // تفريغ الحقول
+            document.getElementById('expenseTitle').value = '';
+            document.getElementById('expenseAmount').value = '';
+            document.getElementById('expensePayer').value = '';
+
+            updateUI();
+            showMessage("تم تسجيل المصروف بنجاح", "success");
+        }
+
+        // حذف مصروف
+        function removeExpense(id) {
+            expenses = expenses.filter(e => e.id !== id);
+            updateUI();
+        }
+
+        // 3. تحديث واجهة المستخدم بالكامل
+        function updateUI() {
+            renderPeople();
+            renderPayerDropdown();
+            renderInvolvedCheckboxes();
+            renderExpenses();
+            calculateSettlements();
+        }
+
+        // عرض قائمة الأشخاص
+        function renderPeople() {
+            const container = document.getElementById('peopleList');
+            
+            if (people.length === 0) {
+                container.innerHTML = '<p class="text-gray-400 text-sm w-full text-center py-2" id="noPeopleMsg">لم يتم إضافة أشخاص بعد</p>';
+                return;
+            }
+
+            container.innerHTML = '';
+
+            people.forEach(person => {
+                const el = document.createElement('div');
+                el.className = 'bg-white border border-gray-200 text-gray-700 px-3 py-1.5 rounded-full flex items-center text-sm shadow-sm';
+                el.innerHTML = `
+                    <span class="ml-2">${person}</span>
+                    <button onclick="removePerson('${person}')" class="text-red-400 hover:text-red-600 focus:outline-none">
+                        <i class="fas fa-times-circle"></i>
+                    </button>
+                `;
+                container.appendChild(el);
+            });
+        }
+
+        // تحديث قائمة "من دفع"
+        function renderPayerDropdown() {
+            const select = document.getElementById('expensePayer');
+            const currentValue = select.value;
+            
+            select.innerHTML = '<option value="" disabled selected>من دفع؟</option>';
+            
+            people.forEach(person => {
+                const option = document.createElement('option');
+                option.value = person;
+                option.textContent = person;
+                select.appendChild(option);
+            });
+
+            if (people.includes(currentValue)) {
+                select.value = currentValue;
+            }
+        }
+
+        // تحديث خيارات المشاركين في المصروف
+        function renderInvolvedCheckboxes() {
+            const container = document.getElementById('expenseInvolved');
+            
+            if (people.length === 0) {
+                container.innerHTML = '<p class="text-xs text-gray-400">أضف أشخاصاً أولاً للتمكن من التحديد</p>';
+                return;
+            }
+
+            container.innerHTML = '';
+            
+            people.forEach(person => {
+                const label = document.createElement('label');
+                label.className = 'cursor-pointer';
+                label.innerHTML = `
+                    <input type="checkbox" value="${person}" class="peer hidden" checked>
+                    <span class="inline-block px-3 py-1 rounded-full border border-gray-300 peer-checked:bg-indigo-600 peer-checked:text-white peer-checked:border-indigo-600 text-sm transition select-none">
+                        ${person}
+                    </span>
+                `;
+                container.appendChild(label);
+            });
+        }
+
+        // عرض سجل المصاريف
+        function renderExpenses() {
+            const container = document.getElementById('expensesList');
+            const totalEl = document.getElementById('totalExpenses');
+            
+            let total = 0;
+
+            if (expenses.length === 0) {
+                container.innerHTML = '<p class="text-gray-400 text-sm text-center py-4" id="noExpensesMsg">لا توجد مصاريف مسجلة</p>';
+                totalEl.textContent = 'الإجمالي: 0';
+                return;
+            }
+
+            container.innerHTML = '';
+
+            expenses.forEach(exp => {
+                total += exp.amount;
+                
+                // تنسيق نص المشاركين
+                let involvedText = "الكل";
+                if (exp.involved && exp.involved.length < people.length) {
+                    involvedText = exp.involved.join('، ');
+                }
+
+                const el = document.createElement('div');
+                el.className = 'flex justify-between items-center p-3 bg-gray-50 rounded-lg border border-gray-100';
+                el.innerHTML = `
+                    <div class="flex flex-col">
+                        <span class="font-bold text-gray-800">${exp.title}</span>
+                        <span class="text-xs text-gray-500">دفعها: <span class="font-bold">${exp.payer}</span></span>
+                        <span class="text-xs text-indigo-500 mt-1"><i class="fas fa-users"></i> يشارك فيها: ${involvedText}</span>
+                    </div>
+                    <div class="flex items-center">
+                        <span class="font-bold text-green-600 ml-3">${exp.amount.toFixed(2)}</span>
+                        <button onclick="removeExpense(${exp.id})" class="text-red-400 hover:text-red-600 transition">
+                            <i class="fas fa-trash-alt"></i>
+                        </button>
+                    </div>
+                `;
+                container.appendChild(el);
+            });
+
+            totalEl.textContent = `الإجمالي: ${total.toFixed(2)}`;
+        }
+
+        // 4. خوارزمية تصفية الحسابات (القلب النابض للتطبيق)
+        function calculateSettlements() {
+            const container = document.getElementById('settlementsList');
+            const avgMsgEl = document.getElementById('averageMsg');
+            const avgAmountEl = document.getElementById('avgAmount');
+
+            if (people.length === 0 || expenses.length === 0) {
+                container.innerHTML = '<p class="text-gray-500 text-sm text-center py-4" id="noSettlementsMsg">أضف الأشخاص والمصاريف لرؤية طريقة تصفية الحسابات.</p>';
+                avgMsgEl.classList.add('hidden'); // لم يعد دقيقاً عرض المتوسط العام
+                return;
+            }
+
+            container.innerHTML = '';
+            avgMsgEl.classList.add('hidden'); // تم إخفاء المتوسط العام لأنه سيختلف حسب كل مصروف
+
+            // 1. حساب أرصدة كل شخص بشكل مستقل (الرصيد الموجب = له فلوس، الرصيد السالب = عليه فلوس)
+            let balances = {};
+            people.forEach(p => balances[p] = 0);
+
+            expenses.forEach(exp => {
+                // إضافة المبلغ للي دفع (يطلبه)
+                balances[exp.payer] += exp.amount;
+
+                // تقسيم المبلغ على المشاركين فيه وخصمه منهم
+                if (exp.involved && exp.involved.length > 0) {
+                    let splitAmount = exp.amount / exp.involved.length;
+                    exp.involved.forEach(person => {
+                        if (balances[person] !== undefined) {
+                            balances[person] -= splitAmount;
+                        }
+                    });
+                }
+            });
+
+            // 2. تحديد من له أموال (دائن) ومن عليه أموال (مدين)
+            let debtors = []; // اللي عليهم فلوس
+            let creditors = []; // اللي يبون فلوس
+
+            for (let person of people) {
+                let balance = balances[person];
+                
+                // تقريب لتفادي مشاكل الكسور العشرية الصغيرة
+                if (balance < -0.01) {
+                    debtors.push({ name: person, amount: Math.abs(balance) });
+                } else if (balance > 0.01) {
+                    creditors.push({ name: person, amount: balance });
+                }
+            }
+
+            // 3. تسوية الديون
+            let settlements = [];
+            let i = 0; // مؤشر المدينين
+            let j = 0; // مؤشر الدائنين
+
+            while (i < debtors.length && j < creditors.length) {
+                let debtor = debtors[i];
+                let creditor = creditors[j];
+
+                // المبلغ الممكن تسويته هو الأقل بين ما يحتاجه الدائن وما يجب على المدين دفعه
+                let amountToSettle = Math.min(debtor.amount, creditor.amount);
+
+                settlements.push({
+                    from: debtor.name,
+                    to: creditor.name,
+                    amount: amountToSettle
+                });
+
+                // تحديث المبالغ المتبقية
+                debtor.amount -= amountToSettle;
+                creditor.amount -= amountToSettle;
+
+                // إذا سدد المدين كل ما عليه، ننتقل للمدين التالي
+                if (debtor.amount < 0.01) i++;
+                // إذا أخذ الدائن كل ما له، ننتقل للدائن التالي
+                if (creditor.amount < 0.01) j++;
+            }
+
+            // 5. عرض النتائج
+            if (settlements.length === 0) {
+                container.innerHTML = '<div class="text-center text-green-600 font-bold p-4 bg-green-50 rounded-lg">الكل خالصين! لا توجد ديون متبقية. 👏</div>';
+                return;
+            }
+
+            settlements.forEach(settlement => {
+                const el = document.createElement('div');
+                el.className = 'flex items-center justify-between bg-white p-3 rounded-xl shadow-sm border border-indigo-50';
+                el.innerHTML = `
+                    <div class="flex items-center">
+                        <div class="bg-red-100 text-red-600 font-bold px-3 py-1 rounded-lg text-sm">${settlement.from}</div>
+                        <i class="fas fa-arrow-left text-gray-400 mx-3"></i>
+                        <div class="bg-green-100 text-green-600 font-bold px-3 py-1 rounded-lg text-sm">${settlement.to}</div>
+                    </div>
+                    <div class="font-black text-indigo-700">
+                        ${settlement.amount.toFixed(2)}
+                    </div>
+                `;
+                container.appendChild(el);
+            });
+        }
+
+        // استبدال نظام التنبيهات برسائل بصرية أنيقة بدلاً من alert التي قد يتم حظرها
+        function showMessage(msg, type = 'error') {
+            let toastContainer = document.getElementById('toastContainer');
+            if (!toastContainer) {
+                toastContainer = document.createElement('div');
+                toastContainer.id = 'toastContainer';
+                toastContainer.className = 'fixed bottom-4 left-1/2 transform -translate-x-1/2 flex flex-col gap-2 z-50 w-full max-w-sm px-4';
+                document.body.appendChild(toastContainer);
+            }
+            
+            const toast = document.createElement('div');
+            const bgColor = type === 'error' ? 'bg-red-500' : 'bg-green-500';
+            const icon = type === 'error' ? 'fa-exclamation-circle' : 'fa-check-circle';
+            
+            toast.className = `${bgColor} text-white px-4 py-3 rounded-lg shadow-lg flex items-center space-x-3 space-x-reverse transition-all duration-300 opacity-0 translate-y-4`;
+            toast.innerHTML = `
+                <i class="fas ${icon} text-xl"></i>
+                <span class="font-bold text-sm">${msg}</span>
+            `;
+            
+            toastContainer.appendChild(toast);
+            
+            // تأثير الظهور
+            setTimeout(() => {
+                toast.classList.remove('opacity-0', 'translate-y-4');
+            }, 10);
+
+            // الإخفاء التلقائي بعد 3 ثوانٍ
+            setTimeout(() => {
+                toast.classList.add('opacity-0', 'translate-y-4');
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        }
+
+        // إضافة دعم لزر Enter لتسهيل الإدخال السريع
+        document.addEventListener('DOMContentLoaded', () => {
+            document.getElementById('personName').addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') addPerson();
+            });
+            
+            document.getElementById('expenseAmount').addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') addExpense();
+            });
+        });
+
+    </script>
+</body>
+</html>
