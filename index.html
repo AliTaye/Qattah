@@ -42,7 +42,6 @@
                 </div>
                 
                 <div id="peopleList" class="flex flex-wrap gap-2">
-                    <!-- سيتم إضافة الأشخاص هنا -->
                     <p class="text-gray-400 text-sm w-full text-center py-2" id="noPeopleMsg">لم يتم إضافة أشخاص بعد</p>
                 </div>
             </div>
@@ -62,7 +61,6 @@
                         
                         <select id="expensePayer" class="w-1/2 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-green-500 focus:ring-1 focus:ring-green-500 bg-white">
                             <option value="" disabled selected>من دفع؟</option>
-                            <!-- سيتم تعبئة الأسماء هنا -->
                         </select>
                     </div>
 
@@ -91,20 +89,24 @@
                     <span id="totalExpenses" class="text-sm bg-blue-100 text-blue-800 py-1 px-3 rounded-full font-bold">الإجمالي: 0</span>
                 </h2>
                 <div class="overflow-y-auto max-h-64 space-y-2 pr-2" id="expensesList">
-                    <!-- المصاريف ستظهر هنا -->
                     <p class="text-gray-400 text-sm text-center py-4" id="noExpensesMsg">لا توجد مصاريف مسجلة</p>
                 </div>
             </div>
 
             <!-- التسويات (مين يطلب مين) -->
             <div class="bg-gradient-to-br from-indigo-50 to-purple-50 rounded-2xl shadow-sm p-6 border border-indigo-100">
-                <h2 class="text-xl font-bold text-indigo-900 mb-4 flex items-center">
-                    <i class="fas fa-handshake text-indigo-600 ml-2"></i> تصفية الحسابات
-                </h2>
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-xl font-bold text-indigo-900 flex items-center">
+                        <i class="fas fa-handshake text-indigo-600 ml-2"></i> تصفية الحسابات
+                    </h2>
+                    <!-- زر تحميل إكسل -->
+                    <button onclick="exportToExcel()" id="exportBtn" class="hidden bg-green-600 hover:bg-green-700 text-white px-3 py-1.5 rounded-lg text-sm font-bold transition flex items-center shadow-sm">
+                        <i class="fas fa-file-excel ml-2"></i> تحميل إكسل
+                    </button>
+                </div>
                 <p id="averageMsg" class="text-sm text-indigo-700 mb-4 hidden">متوسط نصيب الفرد: <span id="avgAmount" class="font-bold">0</span></p>
                 
                 <div id="settlementsList" class="space-y-3">
-                    <!-- التسويات ستظهر هنا -->
                     <p class="text-gray-500 text-sm text-center py-4" id="noSettlementsMsg">أضف الأشخاص والمصاريف لرؤية طريقة تصفية الحسابات.</p>
                 </div>
             </div>
@@ -116,8 +118,8 @@
     <script>
         let people = [];
         let expenses = [];
+        let currentSettlements = []; 
 
-        // 1. إضافة شخص
         function addPerson() {
             const nameInput = document.getElementById('personName');
             const name = nameInput.value.trim();
@@ -139,9 +141,7 @@
             showMessage("تم إضافة الصديق بنجاح", "success");
         }
 
-        // حذف شخص
         function removePerson(name) {
-            // التأكد من أن الشخص ليس لديه مصاريف مسجلة باسمه أو مشارك فيها
             const hasPaid = expenses.some(e => e.payer === name);
             const isInvolved = expenses.some(e => e.involved && e.involved.includes(name));
             
@@ -153,17 +153,14 @@
             updateUI();
         }
 
-        // 2. إضافة مصروف
         function addExpense() {
             let title = document.getElementById('expenseTitle').value.trim();
             const amountInput = document.getElementById('expenseAmount').value;
             const payer = document.getElementById('expensePayer').value;
 
-            // جمع الأشخاص المشاركين في هذا المصروف
             const involvedCheckboxes = document.querySelectorAll('#expenseInvolved input[type="checkbox"]:checked');
             const involved = Array.from(involvedCheckboxes).map(cb => cb.value);
 
-            // تحويل الأرقام العربية إلى إنجليزية لتفادي أخطاء القراءة
             const englishAmountStr = amountInput.replace(/[٠-٩]/g, d => "٠١٢٣٤٥٦٧٨٩".indexOf(d));
             const amount = parseFloat(englishAmountStr);
 
@@ -187,7 +184,6 @@
                 return;
             }
 
-            // جعل الوصف اختيارياً
             if (!title) {
                 title = "مصروف عام";
             }
@@ -197,10 +193,9 @@
                 title: title,
                 amount: amount,
                 payer: payer,
-                involved: involved // إضافة المشاركين
+                involved: involved 
             });
 
-            // تفريغ الحقول
             document.getElementById('expenseTitle').value = '';
             document.getElementById('expenseAmount').value = '';
             document.getElementById('expensePayer').value = '';
@@ -209,13 +204,11 @@
             showMessage("تم تسجيل المصروف بنجاح", "success");
         }
 
-        // حذف مصروف
         function removeExpense(id) {
             expenses = expenses.filter(e => e.id !== id);
             updateUI();
         }
 
-        // 3. تحديث واجهة المستخدم بالكامل
         function updateUI() {
             renderPeople();
             renderPayerDropdown();
@@ -224,7 +217,6 @@
             calculateSettlements();
         }
 
-        // عرض قائمة الأشخاص
         function renderPeople() {
             const container = document.getElementById('peopleList');
             
@@ -248,7 +240,6 @@
             });
         }
 
-        // تحديث قائمة "من دفع"
         function renderPayerDropdown() {
             const select = document.getElementById('expensePayer');
             const currentValue = select.value;
@@ -267,7 +258,6 @@
             }
         }
 
-        // تحديث خيارات المشاركين في المصروف
         function renderInvolvedCheckboxes() {
             const container = document.getElementById('expenseInvolved');
             
@@ -291,7 +281,6 @@
             });
         }
 
-        // عرض سجل المصاريف
         function renderExpenses() {
             const container = document.getElementById('expensesList');
             const totalEl = document.getElementById('totalExpenses');
@@ -309,7 +298,6 @@
             expenses.forEach(exp => {
                 total += exp.amount;
                 
-                // تنسيق نص المشاركين
                 let involvedText = "الكل";
                 if (exp.involved && exp.involved.length < people.length) {
                     involvedText = exp.involved.join('، ');
@@ -336,30 +324,28 @@
             totalEl.textContent = `الإجمالي: ${total.toFixed(2)}`;
         }
 
-        // 4. خوارزمية تصفية الحسابات (القلب النابض للتطبيق)
         function calculateSettlements() {
             const container = document.getElementById('settlementsList');
             const avgMsgEl = document.getElementById('averageMsg');
-            const avgAmountEl = document.getElementById('avgAmount');
+            const exportBtn = document.getElementById('exportBtn');
+
+            currentSettlements = [];
 
             if (people.length === 0 || expenses.length === 0) {
                 container.innerHTML = '<p class="text-gray-500 text-sm text-center py-4" id="noSettlementsMsg">أضف الأشخاص والمصاريف لرؤية طريقة تصفية الحسابات.</p>';
-                avgMsgEl.classList.add('hidden'); // لم يعد دقيقاً عرض المتوسط العام
+                avgMsgEl.classList.add('hidden');
+                exportBtn.classList.add('hidden'); 
                 return;
             }
 
             container.innerHTML = '';
-            avgMsgEl.classList.add('hidden'); // تم إخفاء المتوسط العام لأنه سيختلف حسب كل مصروف
+            avgMsgEl.classList.add('hidden');
 
-            // 1. حساب أرصدة كل شخص بشكل مستقل (الرصيد الموجب = له فلوس، الرصيد السالب = عليه فلوس)
             let balances = {};
             people.forEach(p => balances[p] = 0);
 
             expenses.forEach(exp => {
-                // إضافة المبلغ للي دفع (يطلبه)
                 balances[exp.payer] += exp.amount;
-
-                // تقسيم المبلغ على المشاركين فيه وخصمه منهم
                 if (exp.involved && exp.involved.length > 0) {
                     let splitAmount = exp.amount / exp.involved.length;
                     exp.involved.forEach(person => {
@@ -370,14 +356,11 @@
                 }
             });
 
-            // 2. تحديد من له أموال (دائن) ومن عليه أموال (مدين)
-            let debtors = []; // اللي عليهم فلوس
-            let creditors = []; // اللي يبون فلوس
+            let debtors = [];
+            let creditors = [];
 
             for (let person of people) {
                 let balance = balances[person];
-                
-                // تقريب لتفادي مشاكل الكسور العشرية الصغيرة
                 if (balance < -0.01) {
                     debtors.push({ name: person, amount: Math.abs(balance) });
                 } else if (balance > 0.01) {
@@ -385,41 +368,36 @@
                 }
             }
 
-            // 3. تسوية الديون
-            let settlements = [];
-            let i = 0; // مؤشر المدينين
-            let j = 0; // مؤشر الدائنين
+            let i = 0;
+            let j = 0;
 
             while (i < debtors.length && j < creditors.length) {
                 let debtor = debtors[i];
                 let creditor = creditors[j];
-
-                // المبلغ الممكن تسويته هو الأقل بين ما يحتاجه الدائن وما يجب على المدين دفعه
                 let amountToSettle = Math.min(debtor.amount, creditor.amount);
 
-                settlements.push({
+                currentSettlements.push({
                     from: debtor.name,
                     to: creditor.name,
                     amount: amountToSettle
                 });
 
-                // تحديث المبالغ المتبقية
                 debtor.amount -= amountToSettle;
                 creditor.amount -= amountToSettle;
 
-                // إذا سدد المدين كل ما عليه، ننتقل للمدين التالي
                 if (debtor.amount < 0.01) i++;
-                // إذا أخذ الدائن كل ما له، ننتقل للدائن التالي
                 if (creditor.amount < 0.01) j++;
             }
 
-            // 5. عرض النتائج
-            if (settlements.length === 0) {
+            if (currentSettlements.length === 0) {
                 container.innerHTML = '<div class="text-center text-green-600 font-bold p-4 bg-green-50 rounded-lg">الكل خالصين! لا توجد ديون متبقية. 👏</div>';
+                exportBtn.classList.add('hidden');
                 return;
             }
 
-            settlements.forEach(settlement => {
+            exportBtn.classList.remove('hidden');
+
+            currentSettlements.forEach(settlement => {
                 const el = document.createElement('div');
                 el.className = 'flex items-center justify-between bg-white p-3 rounded-xl shadow-sm border border-indigo-50';
                 el.innerHTML = `
@@ -436,7 +414,41 @@
             });
         }
 
-        // استبدال نظام التنبيهات برسائل بصرية أنيقة بدلاً من alert التي قد يتم حظرها
+        // دالة التصدير إلى إكسل (CSV)
+        function exportToExcel() {
+            if (currentSettlements.length === 0) {
+                showMessage("لا توجد تسويات لتصديرها", "error");
+                return;
+            }
+
+            // إضافة BOM (Byte Order Mark) لدعم اللغة العربية بشكل صحيح في إكسل
+            let csvContent = "\uFEFF";
+            
+            // إضافة عناوين الأعمدة
+            csvContent += "المحول,المحول إليه,مبلغ التحويل\n";
+
+            // إضافة البيانات من التسويات
+            currentSettlements.forEach(s => {
+                // نستخدم علامة الفاصلة لتقسيم الأعمدة
+                csvContent += `${s.from},${s.to},${s.amount.toFixed(2)}\n`;
+            });
+
+            // إنشاء ملف البيانات
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            
+            // إنشاء رابط مخفي والضغط عليه لتنزيل الملف
+            const link = document.createElement("a");
+            link.setAttribute("href", url);
+            link.setAttribute("download", "جدول_تصفية_الحسابات.csv");
+            link.style.visibility = 'hidden';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+
+            showMessage("تم تنزيل ملف الإكسل بنجاح", "success");
+        }
+
         function showMessage(msg, type = 'error') {
             let toastContainer = document.getElementById('toastContainer');
             if (!toastContainer) {
@@ -458,19 +470,16 @@
             
             toastContainer.appendChild(toast);
             
-            // تأثير الظهور
             setTimeout(() => {
                 toast.classList.remove('opacity-0', 'translate-y-4');
             }, 10);
 
-            // الإخفاء التلقائي بعد 3 ثوانٍ
             setTimeout(() => {
                 toast.classList.add('opacity-0', 'translate-y-4');
                 setTimeout(() => toast.remove(), 300);
             }, 3000);
         }
 
-        // إضافة دعم لزر Enter لتسهيل الإدخال السريع
         document.addEventListener('DOMContentLoaded', () => {
             document.getElementById('personName').addEventListener('keypress', function(e) {
                 if (e.key === 'Enter') addPerson();
